@@ -1,0 +1,33 @@
+# Python bytecode and test/cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Local secrets and environment settings
+.env
+.env.*
+!.env.example
+
+# Generated trained model (recreate with `python train.py`)
+app/fraud_model.joblib
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
