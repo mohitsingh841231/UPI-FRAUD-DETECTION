@@ -1,8 +1,63 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>UPI Fraud Monitor</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
-<body><header><div class="brand"><span class="logo">₹</span><span>UPI <b>GUARD</b></span></div><span class="status"><i></i> MODEL MONITOR</span></header>
-<main><section class="hero"><div class="eyebrow">TRANSACTION INTELLIGENCE</div><h1>Fraud detection,<br><em>at a glance.</em></h1><p>Review model performance and estimate the fraud likelihood of a transaction.</p></section>
-{% if metrics %}<section class="metrics"><article><small>ACCURACY</small><strong>{{ '%.1f'|format(metrics.accuracy * 100) }}<sup>%</sup></strong><span>Held-out test set</span></article><article><small>PRECISION</small><strong>{{ '%.1f'|format(metrics.precision * 100) }}<sup>%</sup></strong><span>Fraud predictions correct</span></article><article><small>RECALL</small><strong>{{ '%.1f'|format(metrics.recall * 100) }}<sup>%</sup></strong><span>Fraud cases detected</span></article><article><small>ROC AUC</small><strong>{{ '%.3f'|format(metrics.roc_auc) }}</strong><span>Ranking quality</span></article></section>
-<section class="panel"><div><div class="eyebrow">TEST RESULTS</div><h2>Confusion matrix</h2><p>Actual labels by model prediction</p></div><div class="matrix"><div></div><div class="axis">PREDICTED 0</div><div class="axis">PREDICTED 1</div><div class="axis">ACTUAL 0</div><b>{{ metrics.confusion_matrix[0][0] }}</b><b>{{ metrics.confusion_matrix[0][1] }}</b><div class="axis">ACTUAL 1</div><b>{{ metrics.confusion_matrix[1][0] }}</b><b>{{ metrics.confusion_matrix[1][1] }}</b></div></section>
-<section class="panel predict"><div><div class="eyebrow">QUICK CHECK</div><h2>Score a transaction</h2><p>Provide transaction attributes to estimate risk.</p></div><form id="form"><label>Amount (INR)<input name="amount (INR)" type="number" min="0" placeholder="e.g. 1250" required></label><label>Transaction type<select name="transaction type"><option>P2P</option><option>P2M</option></select></label><label>Merchant category<input name="merchant_category" placeholder="e.g. Grocery" required></label><label>Transaction status<select name="transaction_status"><option>SUCCESS</option><option>FAILED</option><option>PENDING</option></select></label><label>Sender age group<select name="sender_age_group"><option>18-25</option><option>26-35</option><option>36-45</option><option>46-55</option><option>55+</option></select></label><label>Receiver age group<select name="receiver_age_group"><option>18-25</option><option>26-35</option><option>36-45</option><option>46-55</option><option>55+</option></select></label><label>Sender state<input name="sender_state" placeholder="e.g. Delhi" required></label><label>Sender bank<input name="sender_bank" placeholder="e.g. SBI" required></label><label>Receiver bank<input name="receiver_bank" placeholder="e.g. HDFC" required></label><label>Device type<select name="device_type"><option>Android</option><option>iOS</option><option>Web</option></select></label><label>Network type<select name="network_type"><option>4G</option><option>5G</option><option>WiFi</option><option>3G</option></select></label><label>Risk score<input name="risk_score" type="number" step="any" placeholder="e.g. 250" required></label><label>Hour of day<input name="hour_of_day" type="number" min="0" max="23" value="12" required></label><label>Day of week<select name="day_of_week">{% for d in ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] %}<option>{{ d }}</option>{% endfor %}</select></label><label>Weekend?<select name="is_weekend"><option value="0">No</option><option value="1">Yes</option></select></label><button>Check transaction</button></form><div id="result" aria-live="polite"></div></section>
-{% else %}<section class="panel"><h2>Train the model to begin</h2><p>From the project folder, run <code>python train.py</code>. It will train on the dataset and save the metrics and model.</p></section>{% endif %}</main><footer>UPI Guard · Demonstration model · Do not use as the sole basis for financial decisions</footer><script src="{{ url_for('static', filename='app.js') }}"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f0"><title>UPI Guard · Fraud Monitor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='extra.css') }}">
+</head>
+<body>
+<header><div class="brand"><span class="logo">₹</span><span>UPI <b>GUARD</b></span></div><span class="status"><i></i> MODEL MONITOR</span></header>
+<main>
+  <section class="hero"><div class="eyebrow">TRANSACTION INTELLIGENCE</div><h1>Fraud detection,<br><em>at a glance.</em></h1><p>Explore held-out model results and estimate a transaction's fraud likelihood.</p></section>
+  {% if metrics %}
+  <section class="metrics">
+    <article><small>ACCURACY</small><strong>{{ '%.1f'|format(metrics.accuracy * 100) }}<sup>%</sup></strong><span>Held-out test set</span></article>
+    <article><small>PRECISION</small><strong>{{ '%.1f'|format(metrics.precision * 100) }}<sup>%</sup></strong><span>Fraud predictions correct</span></article>
+    <article><small>RECALL</small><strong>{{ '%.1f'|format(metrics.recall * 100) }}<sup>%</sup></strong><span>Fraud cases detected</span></article>
+    <article><small>ROC AUC</small><strong>{{ '%.3f'|format(metrics.roc_auc) }}</strong><span>Ranking quality</span></article>
+  </section>
+  <section class="metrics secondary">
+    <article><small>F1 SCORE</small><strong>{{ '%.3f'|format(metrics.f1) }}</strong><span>Precision and recall balance</span></article>
+    <article><small>AVG. PRECISION</small><strong>{{ '%.3f'|format(metrics.average_precision|default(0)) }}</strong><span>Precision-recall summary</span></article>
+    <article><small>BALANCED ACCURACY</small><strong>{{ '%.1f'|format(metrics.balanced_accuracy|default(0) * 100) }}<sup>%</sup></strong><span>Average class recall</span></article>
+    <article><small>TEST ROWS</small><strong>{{ metrics.test_rows }}</strong><span>{{ metrics.selected_model|default('Random forest')|replace('_',' ')|title }} · threshold {{ metrics.threshold|default(0.5) }}</span></article>
+  </section>
+  <section class="panel"><div><div class="eyebrow">TEST RESULTS</div><h2>Confusion matrix</h2><p>Actual labels by model prediction</p></div>
+    <div class="matrix"><div></div><div class="axis">PREDICTED 0</div><div class="axis">PREDICTED 1</div><div class="axis">ACTUAL 0</div><b>{{ metrics.confusion_matrix[0][0] }}</b><b>{{ metrics.confusion_matrix[0][1] }}</b><div class="axis">ACTUAL 1</div><b>{{ metrics.confusion_matrix[1][0] }}</b><b>{{ metrics.confusion_matrix[1][1] }}</b></div>
+  </section>
+  {% if metrics.validation_roc_auc is defined %}
+  <section class="panel"><div><div class="eyebrow">MODEL SELECTION</div><h2>Validation comparison</h2><p>Validation results chose the candidate; the test set was reserved for final evaluation.</p></div>
+    <div class="score-table"><table><thead><tr><th>Candidate</th><th>Validation ROC AUC</th><th>Role</th></tr></thead><tbody>{% for name, score in metrics.validation_roc_auc.items() %}<tr><td>{{ name|replace('_',' ')|title }}</td><td>{{ '%.4f'|format(score) }}</td><td>{% if name == metrics.selected_model %}Selected{% else %}Baseline{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+  <section class="panel charts"><div><div class="eyebrow">MODEL DIAGNOSTICS</div><h2>Test-set plots</h2><p>Curves and grouped feature importance generated during training.</p></div>
+    <div class="chart-grid"><figure><img src="/artifacts/roc_curve.png" alt="ROC curve"><figcaption>ROC curve</figcaption></figure><figure><img src="/artifacts/precision_recall_curve.png" alt="Precision-recall curve"><figcaption>Precision-recall curve</figcaption></figure>{% if metrics.selected_model == 'random_forest' %}<figure><img src="/artifacts/feature_importance.png" alt="Grouped feature importance"><figcaption>Grouped feature importance</figcaption></figure>{% endif %}</div>
+  </section>
+  {% endif %}
+  <section class="panel predict"><div><div class="eyebrow">QUICK CHECK</div><h2>Score a transaction</h2><p>Provide transaction attributes to estimate risk.</p></div>
+    <form id="form">
+      <label>Amount (INR)<input name="amount (INR)" type="number" min="0" placeholder="e.g. 1250" required></label>
+      <label>Transaction type<select name="transaction type"><option>P2P</option><option>P2M</option></select></label>
+      <label>Merchant category<input name="merchant_category" placeholder="e.g. Grocery" required></label>
+      <label>Transaction status<select name="transaction_status"><option>SUCCESS</option><option>FAILED</option><option>PENDING</option></select></label>
+      <label>Sender age group<select name="sender_age_group"><option>18-25</option><option>26-35</option><option>36-45</option><option>46-55</option><option>55+</option></select></label>
+      <label>Receiver age group<select name="receiver_age_group"><option>18-25</option><option>26-35</option><option>36-45</option><option>46-55</option><option>55+</option></select></label>
+      <label>Sender state<input name="sender_state" placeholder="e.g. Delhi" required></label>
+      <label>Sender bank<input name="sender_bank" placeholder="e.g. SBI" required></label>
+      <label>Receiver bank<input name="receiver_bank" placeholder="e.g. HDFC" required></label>
+      <label>Device type<select name="device_type"><option>Android</option><option>iOS</option><option>Web</option></select></label>
+      <label>Network type<select name="network_type"><option>4G</option><option>5G</option><option>WiFi</option><option>3G</option></select></label>
+      <label>Risk score<input name="risk_score" type="number" step="any" placeholder="e.g. 250" required></label>
+      <label>Hour of day<input name="hour_of_day" type="number" min="0" max="23" value="12" required></label>
+      <label>Day of week<select name="day_of_week">{% for d in ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] %}<option>{{ d }}</option>{% endfor %}</select></label>
+      <label>Weekend?<select name="is_weekend"><option value="0">No</option><option value="1">Yes</option></select></label>
+      <button>Check transaction</button>
+    </form><div id="result" role="status" aria-live="polite"></div>
+  </section>
+  <p class="notice">Evaluation reflects this dataset and one stratified hold-out split. Confirm that <code>risk_score</code> is available before the fraud decision; its provenance is undocumented. Probability scores are not calibrated guarantees.</p>
+  {% else %}
+  <section class="panel"><h2>Train the model to begin</h2><p>From the project folder, run <code>python train.py</code>. It compares candidates, saves test metrics, and generates diagnostic plots.</p></section>
+  {% endif %}
+</main>
+<footer>UPI Guard · Demonstration model · Do not use as the sole basis for financial decisions</footer>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body></html>

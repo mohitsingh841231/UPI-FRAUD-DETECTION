@@ -25,6 +25,9 @@ ENV/
 # Generated trained model (recreate with `python train.py`)
 app/fraud_model.joblib
 
+# Reproducible training outputs (metrics, plots, and reports)
+artifacts/
+
 # Editor and operating system files
 .vscode/
 .idea/
